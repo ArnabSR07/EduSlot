@@ -1,78 +1,91 @@
 const mongoose = require("mongoose");
 const connectDB = require("../config/database");
 
-const User = require("../models/User");
+const User = require("../models/user");
 const Student = require("../models/student");
 const Teacher = require("../models/teacher");
 const Availability = require("../models/availability");
-const Appointment = require("../models/apppointment");
+const Appointment = require("../models/appointment"); // ✅ fixed typo
 const Chat = require("../models/chat");
 const Message = require("../models/message");
 
 const seed = async () => {
-  await connectDB();
+  try {
+    await connectDB();
 
-  //Deleting old data if any
-  await Promise.all([
-    User.deleteMany(),
-    Student.deleteMany(),
-    Teacher.deleteMany(),
-    Availability.deleteMany(),
-    Appointment.deleteMany(),
-    Chat.deleteMany(),
-    Message.deleteMany(),
-  ]);
+    // 🧹 Clear old data
+    await Promise.all([
+      User.deleteMany(),
+      Student.deleteMany(),
+      Teacher.deleteMany(),
+      Availability.deleteMany(),
+      Appointment.deleteMany(),
+      Chat.deleteMany(),
+      Message.deleteMany(),
+    ]);
 
-  const studentUser = await User.create({
-    name: "Test Student",
-    email: "student@test.com",
-    password: "123456",
-    role: "student",
-  });
+    // 👤 STUDENT USER (Clerk-based)
+    const studentUser = await User.create({
+      clerkUserId: "seed_student_clerk_id",
+      name: "Test Student",
+      email: "student@test.com",
+      role: "student",
+    });
 
-  const student = await Student.create({
-    user: studentUser._id,
-    roll: "22101106015",
-  });
+    const student = await Student.create({
+      user: studentUser._id,
+      roll: "22101106015",
+    });
 
-  const teacherUser = await User.create({
-    name: "Test Teacher",
-    email: "teacher@test.com",
-    password: "123456",
-    role: "teacher",
-  });
+    // 👤 TEACHER USER (Clerk-based)
+    const teacherUser = await User.create({
+      clerkUserId: "seed_teacher_clerk_id",
+      name: "Test Teacher",
+      email: "teacher@test.com",
+      role: "teacher",
+    });
 
-  const teacher = await Teacher.create({
-    user: teacherUser._id,
-    subjects: ["DBMS"],
-    department: "IT",
-  });
+    const teacher = await Teacher.create({
+      user: teacherUser._id,
+      subjects: ["DBMS"],
+      department: "IT",
+    });
 
-  await Availability.create({
-    teacher: teacher._id,
-    day: "Monday",
-    slots: ["10:00 - 10:30"],
-  });
+    // 📅 Availability
+    await Availability.create({
+      teacher: teacher._id,
+      day: "Monday",
+      slots: ["10:00 - 10:30"],
+    });
 
-  const appointment = await Appointment.create({
-    student: student._id,
-    teacher: teacher._id,
-    date: new Date(),
-    timeSlot: "10:00 - 10:30",
-  });
+    // 📌 Appointment
+    const appointment = await Appointment.create({
+      student: student._id,
+      teacher: teacher._id,
+      date: new Date(),
+      timeSlot: "10:00 - 10:30",
+      status: "approved",
+    });
 
-  const chat = await Chat.create({
-    appointment: appointment._id,
-    participants: [studentUser._id, teacherUser._id],
-  });
+    // 💬 Chat
+    const chat = await Chat.create({
+      appointment: appointment._id,
+      participants: [studentUser._id, teacherUser._id],
+    });
 
-  await Message.create({
-    chat: chat._id,
-    sender: studentUser._id,
-    text: "Hello Sir",
-  });
+    // ✉️ Message
+    await Message.create({
+      chat: chat._id,
+      sender: studentUser._id,
+      text: "Hello Sir",
+    });
 
-  console.log("All collections created successfully");
+    console.log("✅ All collections seeded successfully");
+    process.exit(0);
+  } catch (error) {
+    console.error("❌ Seeding failed:", error);
+    process.exit(1);
+  }
 };
 
 seed();
