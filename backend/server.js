@@ -22,6 +22,7 @@ connectDB();
 initSocket(server);
 
 app.use("/api/users", require("./routes/userRoutes"));
+app.use("/api/appointments", require("./routes/appointmentRoutes"));
 
 app.listen(port, () => {
   console.log(`App listening on port ${port}`);
